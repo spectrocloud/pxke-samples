@@ -1,0 +1,3 @@
+ARG BASE_IMAGE=gcr.io/spectro-dev-public/stylus-installer:latest
+FROM $BASE_IMAGE
+COPY overlay/installer/ /

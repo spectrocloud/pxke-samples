@@ -1,0 +1,8 @@
+*.iso
+*.sha256
+.DS_Store
+.local.env
+/target
+/config
+.installer.env
+overlay/oem/userdata.yaml

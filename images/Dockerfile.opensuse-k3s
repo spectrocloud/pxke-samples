@@ -1,0 +1,20 @@
+ARG BASE_IMAGE_TAG=latest
+ARG BASE_IMAGE=quay.io/kairos/core-opensuse-k3s:$BASE_IMAGE_TAG
+
+ARG K8S_VERSION=v1.22.13-k3s1
+FROM $BASE_IMAGE"_"$K8S_VERSION as build
+
+ARG ARCH=amd64
+ENV ARCH=${ARCH}
+
+# Install any needed packages e.g
+# RUN zypper in -y somepackage
+
+COPY overlay/os/opensuse /
+
+
+# Clear cache
+RUN rm -rf /var/cache/*
+
+FROM scratch as release
+COPY --from=build / /

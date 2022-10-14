@@ -1,0 +1,26 @@
+ARG BASE_REPO=quay.io/kairos
+ARG K8S_VERSION=v1.22.12-rke2r1
+ARG BASE_IMAGE=$BASE_REPO/core-ubuntu-20-lts-rke2:$K8S_VERSION
+
+
+FROM $BASE_IMAGE as build
+ARG ARCH=amd64
+ENV ARCH=${ARCH}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Sample commands to add custom packages
+#RUN apt update && apt install -y \
+#        open-vm-tools \
+#        jq \
+#        netplan.io \
+#        wireguard \
+#         && apt-get clean
+
+COPY overlay/os/ubuntu/ /
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/cache/* 
+
+FROM scratch as release
+COPY --from=build / /
