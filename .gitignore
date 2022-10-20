@@ -6,3 +6,4 @@
 /config
 .installer.env
 overlay/oem/userdata.yaml
+overlay/installer/oem/userdata.yaml
