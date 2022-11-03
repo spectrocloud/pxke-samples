@@ -5,6 +5,14 @@
 2.  Create a `user-data.yaml` file.
 Example Content
 ```
+#cloud-config
+stylus:
+  site:
+    # Palette target default: api.spectrocloud.com
+    # paletteEndpoint: api.spectrocloud.com
+    
+    # optional registration URL for QRCode Generation
+    # registrationURL: https://app.vercel.app/
 install:
   reboot: false
   poweroff: true
