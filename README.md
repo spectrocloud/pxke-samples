@@ -32,7 +32,7 @@ Example:
 
 ISO_IMAGE="prod-2.0.4"
 
-### Version of the stylus installer to customize .Optional- Defaults to whatver is current latest release  - https://github.com/spectrocloud/stylus/releases.For using latest builds, use "latest"
+### Version of the stylus installer to customize .Optional- Defaults to whatver is current latest release  - https://github.com/spectrocloud/stylus/releases.  For using latest builds, use "latest"
 
 INSTALLER_VERSION="v2.0.4"
 
