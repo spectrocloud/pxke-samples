@@ -7,3 +7,4 @@
 .installer.env
 overlay/oem/userdata.yaml
 overlay/installer/oem/userdata.yaml
+*user-data.yaml
