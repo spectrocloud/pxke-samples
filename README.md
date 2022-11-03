@@ -1,4 +1,5 @@
-# PXKE Samples is a workeing repo providing examples on how to customize the PXK-E Installer.
+# PXKE Samples 
+A working repo providing examples on how to customize the PXK-E Installer.
 
 1.  Clone this repo.
 
