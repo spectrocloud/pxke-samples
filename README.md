@@ -95,7 +95,7 @@ An example user-data file might be as follows:
 
 
 
-3.  Run `,/build-installer.sh`
+3.  Run `./build-installer.sh`
 
 The output is an ISO you can mount to run the installer on the system of your choice.
 
