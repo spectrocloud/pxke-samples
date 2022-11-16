@@ -5,22 +5,67 @@ A working repo providing examples on how to customize the PXK-E Installer.
 
 2.  Create a `user-data.yaml` file.
 Example Content
-```
+
+```yaml
 #cloud-config
+stages:
+  boot:
+    - users:
+        kairos:
+          groups:
+            - sudo
+          passwd: kairos
 stylus:
   site:
-    # Palette target default: api.spectrocloud.com
-    # paletteEndpoint: api.spectrocloud.com
+    # host for hubble api to register device.
+    paletteEndpoint: api.spectrocloud.com
     
-    # optional registration URL for QRCode Generation
-    # registrationURL: https://app.vercel.app/
-install:
-  reboot: false
-  poweroff: true
-  device: /dev/sda
-users:
-- name: "kairos"
-  passwd: "kairos"
+    # name of the device, this may also be referred to as the edge id or edge host id.  If no edge host name is specified
+    # one will be generated from the device serial number.  If stylus cannot the device serial number a random id will
+    # be used instead. In the case of hardware that does not have a serial number is highly recommended to specify the
+    # device name as a random name is not deterministic and may lead to a device being registered twice under different 
+    # names.
+    name: edge-randomid
+    # An optional url which will be used to combine with the edge name from above to generate a QR code on the screen  for
+    # ease of creation of devices and cluster on PaletteUI via an application e.g vercel.app .
+    # QR code will appear only of the device is not registered on Palette
+    registrationURL: https://edge-registration-app.vercel.app/
+    
+    # Optional 
+    network:
+      # configures http_proxy
+      httpProxy: http://proxy.example.com
+      # configures https_proxy
+      httpsProxy: https://proxy.example.com
+      # configures no_proxy
+      noProxy: 10.10.128.10,10.0.0.0/8    
+
+      # Optional: configures the global  nameserver for the system.
+      nameserver: 1.1.1.1
+      # configure interface specific info. If omitted all interfaces will default to dhcp
+      interfaces:
+           enp0s3:
+               # type of network dhcp or static
+               type: static
+               # Ip address including the mask bits
+               ipAddress: 10.0.10.25/24
+               # Gateway for the static ip.
+               gateway: 10.0.10.1
+               # interface specific nameserver
+               nameserver: 10.10.128.8
+           enp0s4:
+               type: dhcp 
+    caCerts:
+      - |
+        ------BEGIN CERTIFICATE------
+        *****************************
+        *****************************
+        ------END CERTIFICATE------
+      - |
+        ------BEGIN CERTIFICATE------
+        *****************************
+        *****************************
+        ------END CERTIFICATE------
 ```
 
 4.  run `cp .installer.env.template .installer.env`
@@ -44,6 +89,11 @@ INSTALLER_VERSION="v2.0.4"
 
 USER_DATA_FILE="user-data.yaml"
 ```
+
+An example user-data file might be as follows:
+
+
+
 
 3.  Run `,/build-installer.sh`
 
