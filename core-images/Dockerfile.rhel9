@@ -1,0 +1,121 @@
+ARG BASE_IMAGE=registry.access.redhat.com/ubi9-init:9.1.0-12
+FROM alpine as build
+# Until this is released https://github.com/kairos-io/kairos/issues/116 , we copy individual kairos elements from source and a similar base image
+RUN apk add git
+RUN git clone  --branch v1.5.0 https://github.com/kairos-io/kairos.git /kairos
+
+FROM quay.io/luet/base as luet
+
+# Since fedora is close to redhat, we use the core fedora image to copy binaries.
+FROM quay.io/kairos/core-fedora:v1.5.0 as kairos-base
+
+FROM $BASE_IMAGE 
+ARG USERNAME
+ARG PASSWORD
+COPY --from=quay.io/kairos/framework:v1.5.0 / /
+COPY --from=build /kairos/overlay/files /
+RUN rm /etc/systemd/system/tmp.mount
+
+RUN dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+# Subscription manager in redhat does not run directly in containers unless you run on a redhat host, hence we remove the rhsm-host, login to the redhat subscription and add the repos
+RUN rm /etc/rhsm-host && subscription-manager register --username ${USERNAME} --password ${PASSWORD} \
+  && yum repolist \
+  && subscription-manager attach --auto \
+  && yum repolist
+RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
+# Generate machine-id because https://bugzilla.redhat.com/show_bug.cgi?id=1737355#c6
+RUN uuidgen > /etc/machine-id && dnf install -y \
+    squashfs-tools \ 
+    dracut-live \
+    livecd-tools \
+    dracut-squash \
+    dracut-network \
+    efibootmgr \
+    dhclient \
+    audit \
+    sudo \
+    systemd \
+    systemd-networkd \
+    systemd-resolved \
+    systemd-timesyncd \
+    parted \
+    dracut \
+    e2fsprogs \
+    dosfstools \
+    coreutils-single \
+    device-mapper \
+    grub2 \
+    which \
+    curl-minimal \
+    nano \
+    gawk \
+    haveged \
+    polkit \
+    ncurses \
+    tar \
+    openssh-server \
+    openssh-clients \
+    shim-x64 \
+    grub2-pc \
+    grub2-efi-x64 \
+    grub2-efi-x64-modules \
+    open-vm-tools \
+    iscsi-initiator-utils \
+    iptables ethtool socat iproute-tc conntrack \
+    kernel kernel-modules kernel-modules-extra \
+    rsync jq && dnf clean all
+
+RUN mkdir -p /run/lock
+RUN touch /usr/libexec/.keep
+
+# Configure the box. The ubi image masks services for containers, we unmask them 
+RUN systemctl list-unit-files |grep masked |cut -f 1 -d " " | xargs systemctl unmask
+RUN systemctl enable getty@tty1.service
+RUN systemctl enable getty@tty2.service
+RUN systemctl enable getty@tty3.service
+RUN systemctl enable systemd-networkd
+RUN systemctl enable systemd-resolved
+RUN systemctl enable sshd
+RUN systemctl disable selinux-autorelabel-mark.service 
+
+# Now we install Kairos dependencies below
+COPY --from=luet /usr/bin/luet /usr/bin/luet
+
+RUN mkdir -p /etc/luet/repos.conf.d && \
+    luet repo add kairos -y --url quay.io/kairos/packages --type docker
+
+RUN luet install -y \
+        system/base-cloud-config \
+        dracut/immutable-rootfs \
+        dracut/network \
+        static/grub-config \
+        system/suc-upgrade \
+        system/shim \
+        system/grub2-efi \
+        system/elemental-cli \
+        init-svc/systemd
+RUN systemctl enable cos-setup-rootfs.service && \
+	    systemctl enable cos-setup-initramfs.service && \
+	    systemctl enable cos-setup-reconcile.timer && \
+    	    systemctl enable cos-setup-fs.service && \
+	    systemctl enable cos-setup-boot.service && \
+	    systemctl enable cos-setup-network.service
+
+# Copy fedora/redhat specific files,mostly related to iso booting
+COPY --from=build /kairos/overlay/files-fedora /
+# The kairos-agent is missing from the framework image. until https://github.com/kairos-io/kairos/issues/777 is solved , we copy from fedora image
+COPY --from=kairos-base /usr/bin/kairos-agent /usr/bin
+# The framwork image contains a tmp.mount overrride. We remove it to use the default redhat service
+RUN rm /etc/systemd/system/tmp.mount
+RUN systemctl enable tmp.mount
+
+RUN kernel=$(ls /boot/vmlinuz-* | head -n1) && \
+            ln -sf "${kernel#/boot/}" /boot/vmlinuz
+RUN kernel=$(ls /lib/modules | head -n1) && \
+            dracut -v -N -f "/boot/initrd-${kernel}" "${kernel}" && \
+            ln -sf "initrd-${kernel}" /boot/initrd && depmod -a "${kernel}"
+## Clear cache
+RUN rm -rf /var/cache/* && journalctl --vacuum-size=1K  && rm /etc/machine-id
+
+
+RUN subscription-manager unregister
