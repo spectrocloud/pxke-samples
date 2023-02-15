@@ -30,6 +30,10 @@ stylus:
     # ease of creation of devices and cluster on PaletteUI via an application e.g vercel.app .
     # QR code will appear only of the device is not registered on Palette
     registrationURL: https://edge-registration-app.vercel.app/
+    # The id of the project that is in scope for the device.
+    projectUid: ""
+    # The Palette tenant registration token value. This is an optional value and only used for automated registration.
+    edgeHostToken: ""
     
     # Optional 
     network:
