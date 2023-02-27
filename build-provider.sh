@@ -22,8 +22,8 @@ docker run -t -v $(pwd):/workspace \
               -e NO_BUILDKIT=1 \
               earthly/earthly:v0.6.30  \
               +docker-all-platforms \
-              --KUBEADM_VERSION=1.25.2 \
-              --BASE_IMAGE=gcr.io/spectro-dev-public/spectro-sample/rhel9-kairos:0.1 \
-              --IMAGE_REPOSITORY=gcr.io/spectro-dev-public/spectro-sample 
+              --KUBEADM_VERSION=$PROVIDER_VERSION \
+              --BASE_IMAGE=$CORE_IMAGE \
+              --IMAGE_REPOSITORY=$PROVIDER_IMAGE_REPOSITORY 
 
 
