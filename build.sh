@@ -16,9 +16,15 @@ echo "Building custom $IMAGE from $BASE_IMAGE"
 if [ -f $USER_DATA_FILE ]; then
  cp $USER_DATA_FILE overlay/files-iso/config.yaml
 fi
+DOCKERFILE=Dockerfile.${FLAVOR}
+BASE_IMAGE_ARG="BASE_IMAGE_TAG=$KAIROS_VERSION"
+if [ ! -z $BASE_IMAGE ]; then
+DOCKERFILE=Dockerfile.byos-${K8SDISTRO}
+BASE_IMAGE_ARG="BASE_IMAGE=$BASE_IMAGE"
+fi
 docker build  --build-arg SPECTRO_VERSION=$SPECTRO_VERSION \
-              --build-arg BASE_IMAGE_TAG=$KAIROS_VERSION \
-               -t $INSTALLER_IMAGE -f images/Dockerfile.${FLAVOR} .
+              --build-arg $BASE_IMAGE_ARG \
+               -t $INSTALLER_IMAGE -f images/$DOCKERFILE .
 
 
 echo "Building $ISO.iso from $IMAGE"
@@ -32,10 +38,10 @@ for k8s_version in ${K8S_VERSIONS//,/ }
 do 
 IMAGE=$IMAGE_REPO:$k8s_version
 docker build --build-arg K8S_VERSION=$k8s_version \
-             --build-arg BASE_IMAGE_TAG=$KAIROS_VERSION \
+             --build-arg $BASE_IMAGE_ARG \
              --build-arg SPECTRO_VERSION=$SPECTRO_VERSION \
              -t $IMAGE \
-             -f images/Dockerfile.${FLAVOR} ./
+             -f images/$DOCKERFILE ./
 done
 
 if [[ "$PUSH_BUILD" == "true" ]]; then
