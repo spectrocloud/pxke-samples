@@ -5,7 +5,7 @@ source versions.sh
 set -ex
 ISO_IMAGE_NAME="${ISO_IMAGE_NAME:-spectro-installer}"
 KAIROS_VERSION="${KAIROS_VERSION:-v1.5.0}"
-SPECTRO_VERSION="${SPECTRO_VERSION:-v3.2.2-alpha6}"
+SPECTRO_VERSION="${SPECTRO_VERSION:-v3.2.2}"
 INSTALLER_IMAGE_NAME="${IMAGE_NAME:-gcr.io/spectro-dev-public/spectro-edge-installer}"
 INSTALLER_IMAGE="${INSTALLER_IMAGE_NAME}:${SPECTRO_VERSION}"
 USER_DATA_FILE="${USER_DATA_FILE:-user-data}"

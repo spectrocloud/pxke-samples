@@ -1,7 +1,7 @@
 ARG BASE_IMAGE_TAG=v1.5.0
 ARG BASE_IMAGE_NAME=byos
 ARG IMAGE_REPOSITORY=quay.io/kairos/
-ARG SPECTRO_VERSION=v3.2.2-alpha6
+ARG SPECTRO_VERSION=v3.2.2
 ARG BASE_IMAGE
 FROM gcr.io/spectro-dev-public/stylus-framework:${SPECTRO_VERSION} as spectro-base
 FROM ghcr.io/kairos-io/provider-k3s:v1.2.3  as provider-k3s
