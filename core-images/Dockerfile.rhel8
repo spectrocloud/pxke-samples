@@ -83,7 +83,7 @@ RUN systemctl disable selinux-autorelabel-mark.service
 COPY --from=luet /usr/bin/luet /usr/bin/luet
 
 RUN mkdir -p /etc/luet/repos.conf.d && \
-    luet repo add kairos -y --url quay.io/kairos/packages --type docker
+    luet repo add kairos -y --url quay.io/kairos/packages --type docker  --reference 20230216094938-repository.yaml
 
 RUN luet install -y \
         system/base-cloud-config \
