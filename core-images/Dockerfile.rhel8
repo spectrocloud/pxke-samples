@@ -1,20 +1,9 @@
 ARG BASE_IMAGE=registry.access.redhat.com/ubi8/ubi-init:8.7-10
-FROM alpine as build
-# Until this is released https://github.com/kairos-io/kairos/issues/116 , we copy individual kairos elements from source and a similar base image
-RUN apk add git
-RUN git clone  --branch v1.5.0 https://github.com/kairos-io/kairos.git /kairos
-
-FROM quay.io/luet/base as luet
-
-# Since fedora is close to redhat, we use the core fedora image to copy binaries.
-FROM quay.io/kairos/core-fedora:v1.5.0 as kairos-base
 
 FROM $BASE_IMAGE 
 ARG USERNAME
 ARG PASSWORD
-COPY --from=quay.io/kairos/framework:v1.5.0 / /
-COPY --from=build /kairos/overlay/files /
-RUN rm /etc/systemd/system/tmp.mount
+COPY --from=quay.io/kairos/framework:v2.0.3_fedora / /
 
 RUN dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
 # Subscription manager in redhat does not run directly in containers unless you run on a redhat host, hence we remove the rhsm-host, login to the redhat subscription and add the repos
@@ -54,6 +43,7 @@ RUN uuidgen > /etc/machine-id && dnf install -y \
     ncurses \
     tar \
     kbd \
+    lvm2 \
     openssh-server \
     openssh-clients \
     shim-x64 \
@@ -79,38 +69,14 @@ RUN systemctl enable systemd-resolved
 RUN systemctl enable sshd
 RUN systemctl disable selinux-autorelabel-mark.service 
 
-# Now we install Kairos dependencies below
-COPY --from=luet /usr/bin/luet /usr/bin/luet
-
-RUN mkdir -p /etc/luet/repos.conf.d && \
-    luet repo add kairos -y --url quay.io/kairos/packages --type docker
-
-RUN luet install -y \
-        system/base-cloud-config \
-        dracut/immutable-rootfs \
-        dracut/network \
-        static/grub-config \
-        system/suc-upgrade \
-        system/shim \
-        system/grub2-efi \
-        system/elemental-cli \
-        init-svc/systemd
-RUN systemctl enable cos-setup-rootfs.service && \
-	    systemctl enable cos-setup-initramfs.service && \
-	    systemctl enable cos-setup-reconcile.timer && \
+RUN systemctl enable cos-setup-reconcile.timer && \
     	    systemctl enable cos-setup-fs.service && \
 	    systemctl enable cos-setup-boot.service && \
 	    systemctl enable cos-setup-network.service
 
-# Copy fedora/redhat specific files,mostly related to iso booting
-COPY --from=build /kairos/overlay/files-fedora /
-# The kairos-agent is missing from the framework image. until https://github.com/kairos-io/kairos/issues/777 is solved , we copy from fedora image
-COPY --from=kairos-base /usr/bin/kairos-agent /usr/bin
 # The framwork image contains a tmp.mount overrride. We remove it to use the default redhat service
-RUN rm /etc/systemd/system/tmp.mount
 RUN systemctl enable tmp.mount
 
-RUN rm  /etc/dracut.conf.d/90-kairos-resolved.conf /etc/dracut.conf.d/90-kairos-sysext.conf
 COPY overlay/rhel8/ /
 
 RUN kernel=$(ls /boot/vmlinuz-* | head -n1) && \
