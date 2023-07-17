@@ -32,13 +32,12 @@ RUN rm /etc/rhsm-host && subscription-manager register --username ${USERNAME} --
   && subscription-manager attach --auto \
   && subscription-manager repos --enable rhel-8-for-x86_64-appstream-rpms \
   && yum repolist
-RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
 # Generate machine-id because https://bugzilla.redhat.com/show_bug.cgi?id=1737355#c6
 RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
 
 RUN uuidgen > /etc/machine-id && dnf install -y \
     audit \
-    coreutils \
+    coreutils-single \
     curl \
     device-mapper \
     dosfstools \
@@ -71,7 +70,6 @@ RUN uuidgen > /etc/machine-id && dnf install -y \
     sudo \
     systemd \
     systemd-networkd \
-    systemd-resolved \
     tar \
     which \
     && dnf clean all
