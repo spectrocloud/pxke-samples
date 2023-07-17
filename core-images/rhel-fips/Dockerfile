@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=fedora:36
+ARG BASE_IMAGE=registry.access.redhat.com/ubi8/ubi-init:8.7-10
 ARG USERNAME
 ARG PASSWORD
 
