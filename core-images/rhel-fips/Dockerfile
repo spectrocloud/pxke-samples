@@ -10,8 +10,8 @@ RUN zypper install -y gettext && zypper clean
 RUN mkdir /workspace
 COPY --from=base /etc/os-release /workspace/os-release
 # You should change the following values according to your own versioning and other details
-RUN OS_NAME=kairos-core-fedora-fips \
-  OS_VERSION=v9.9.9 \
+RUN OS_NAME=kairos-core-rhel-fips \
+  OS_VERSION=v1.0.0 \
   OS_ID="kairos" \
   OS_NAME=kairos-fedora-fips \
   BUG_REPORT_URL="https://github.com/spectrocloud/pxke-samples/issues" \
@@ -20,7 +20,7 @@ RUN OS_NAME=kairos-core-fedora-fips \
   OS_LABEL="latest" \
   GITHUB_REPO="spectrocloud/pxke-samples" \
   VARIANT="fips" \
-  FLAVOR="fedora" \
+  FLAVOR="rhel" \
   /update-os-release.sh
 
 FROM base
