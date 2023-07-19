@@ -32,70 +32,78 @@ RUN rm /etc/rhsm-host && subscription-manager register --username ${USERNAME} --
   && subscription-manager attach --auto \
   && subscription-manager repos --enable rhel-8-for-x86_64-appstream-rpms \
   && yum repolist
-# Generate machine-id because https://bugzilla.redhat.com/show_bug.cgi?id=1737355#c6
 RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-
+# Generate machine-id because https://bugzilla.redhat.com/show_bug.cgi?id=1737355#c6
 RUN uuidgen > /etc/machine-id && dnf install -y \
-    audit \
-    coreutils-single \
-    curl \
-    device-mapper \
-    dosfstools \
-    dracut \
+    squashfs-tools \ 
     dracut-live \
-    dracut-network \
-    dracut-squash \
-    e2fsprogs \
-    efibootmgr \
-    gawk \
-    gdisk \
-    grub2 \
-    grub2-efi-x64 \
-    grub2-efi-x64-modules \
-    grub2-pc \
-    haveged \
-    kernel \
-    kernel-modules \
-    kernel-modules-extra \
     livecd-tools \
-    lvm2 \
-    nano \
-    openssh-server \
-    parted \
-    polkit \
-    qemu-guest-agent \
-    rsync \
-    shim-x64 \
-    squashfs-tools \
+    dracut-squash \
+    dracut-network \
+    efibootmgr \
+    dhclient \
+    audit \
     sudo \
     systemd \
     systemd-networkd \
-    tar \
+    systemd-timesyncd \
+    parted \
+    dracut \
+    e2fsprogs \
+    dosfstools \
+    coreutils-single \
+    device-mapper \
+    grub2 \
     which \
-    && dnf clean all
+    curl \
+    nano \
+    gawk \
+    haveged \
+    polkit \
+    ncurses \
+    tar \
+    kbd \
+    lvm2 \
+    openssh-server \
+    openssh-clients \
+    shim-x64 \
+    grub2-pc \
+    grub2-efi-x64 \
+    grub2-efi-x64-modules \
+    open-vm-tools \
+    iscsi-initiator-utils \
+    iptables ethtool socat iproute-tc conntrack \
+    kernel kernel-modules kernel-modules-extra \
+    rsync jq && dnf clean all
 
 RUN mkdir -p /run/lock && \
-  touch /usr/libexec/.keep && \
-  systemctl enable getty@tty1.service && \
-  systemctl enable getty@tty2.service && \
-  systemctl enable getty@tty3.service && \
-  systemctl enable systemd-networkd && \
-  systemctl enable systemd-resolved && \
-  systemctl enable sshd
+  touch /usr/libexec/.keep
 
 # Copy the os-release file to identify the OS
 COPY --from=osbuilder /workspace/os-release /etc/os-release
 
 COPY --from=quay.io/kairos/framework:master_fips-systemd / /
 
+COPY overlay/rhel8/ /
+
+# Configure the box. The ubi image masks services for containers, we unmask them 
+RUN systemctl list-unit-files |grep masked |cut -f 1 -d " " | xargs systemctl unmask
+RUN systemctl enable getty@tty1.service
+RUN systemctl enable getty@tty2.service
+RUN systemctl enable getty@tty3.service
+RUN systemctl enable systemd-networkd
+RUN systemctl enable systemd-resolved
+RUN systemctl enable sshd
+RUN systemctl disable selinux-autorelabel-mark.service 
+#RUN systemctl enable tmp.mount
+
+RUN systemctl enable cos-setup-reconcile.timer && \
+    	    systemctl enable cos-setup-fs.service && \
+	    systemctl enable cos-setup-boot.service && \
+	    systemctl enable cos-setup-network.service
+
 # Copy the custom dracut config file
 COPY dracut.conf /etc/dracut.conf.d/kairos-fips.conf
-
-# Activate Kairos services
-RUN systemctl enable cos-setup-reconcile.timer && \
-          systemctl enable cos-setup-fs.service && \
-          systemctl enable cos-setup-boot.service && \
-          systemctl enable cos-setup-network.service
 
 ## Generate initrd
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -107,5 +115,8 @@ RUN kernel=$(ls /lib/modules | head -n1) && \
 
 # Symlink kernel HMAC
 RUN kernel=$(ls /boot/vmlinuz-* | head -n1) && ln -sf ."${kernel#/boot/}".hmac /boot/.vmlinuz.hmac
+
+# Disable SELinux
+RUN echo "SELINUX=disabled" > /etc/selinux/config
 
 RUN rm -rf /boot/initramfs-*
