@@ -13,12 +13,12 @@ IMAGE="${IMAGE_NAME}:${INSTALLER_VERSION}"
 USER_DATA_FILE="${USER_DATA_FILE:-user-data}"
 BUILD_PLATFORM="${BUILD_PLATFORM:-linux/amd64}"
 
-if [ -f $USER_DATA_FILE ]; then
+if [ ! -z $USER_DATA_FILE ]; then
  mkdir -p overlay/installer/oem
  cp $USER_DATA_FILE overlay/installer/oem/userdata.yaml
 fi
 
-if [ -f $CONTENT_BUNDLE ]; then
+if [ ! -z $CONTENT_BUNDLE ]; then
   mkdir -p overlay/files-iso-installer/opt/spectrocloud/content
   #cp $CONTENT_BUNDLE overlay/files-iso-installer/opt/spectrocloud/content/spectro-content.tar
   zstd -19 -T0 -o overlay/files-iso-installer/opt/spectrocloud/content/spectro-content.tar.zst $CONTENT_BUNDLE
@@ -36,7 +36,7 @@ docker build --build-arg BASE_IMAGE=$BASE_IMAGE \
 echo "Building $ISO.iso from $IMAGE"
 docker run -v "$PWD:/cOS" \
            -v /var/run/docker.sock:/var/run/docker.sock \
-           -i --rm quay.io/kairos/osbuilder-tools:latest build-iso \
+           -i --rm quay.io/kairos/osbuilder-tools:v0.7.11 build-iso \
              --name $ISO --debug --local  \
              --overlay-iso /cOS/overlay/files-iso-installer --output /cOS/ \
              $IMAGE
