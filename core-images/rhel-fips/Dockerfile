@@ -11,12 +11,12 @@ RUN mkdir /workspace
 COPY --from=base /etc/os-release /workspace/os-release
 # You should change the following values according to your own versioning and other details
 RUN OS_NAME=kairos-core-rhel-fips \
-  OS_VERSION=v1.0.0 \
-  OS_ID="kairos" \
-  OS_NAME=kairos-fedora-fips \
+  OS_VERSION=8\
+  OS_ID="rhel" \
+  OS_NAME=kairos-rhel-fips \
   BUG_REPORT_URL="https://github.com/spectrocloud/pxke-samples/issues" \
   HOME_URL="https://github.com/spectrocloud/pxke-samples" \
-  OS_REPO="quay.io/spectrocloud/fedora-fips" \
+  OS_REPO="github.com/spectrocloud/pxke-samples" \
   OS_LABEL="latest" \
   GITHUB_REPO="spectrocloud/pxke-samples" \
   VARIANT="fips" \
