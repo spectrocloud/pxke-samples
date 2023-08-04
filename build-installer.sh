@@ -20,8 +20,8 @@ fi
 
 if [ ! -z $CONTENT_BUNDLE ]; then
   mkdir -p overlay/files-iso-installer/opt/spectrocloud/content
-  #cp $CONTENT_BUNDLE overlay/files-iso-installer/opt/spectrocloud/content/spectro-content.tar
-  zstd -19 -T0 -o overlay/files-iso-installer/opt/spectrocloud/content/spectro-content.tar.zst $CONTENT_BUNDLE
+  cp $CONTENT_BUNDLE overlay/files-iso-installer/opt/spectrocloud/content/
+  #zstd -19 -T0 -o overlay/files-iso-installer/opt/spectrocloud/content/spectro-content.tar.zst $CONTENT_BUNDLE
   #rm overlay/files-iso-installer/opt/spectrocloud/content/spectro-content.tar
 fi
 
@@ -30,7 +30,8 @@ echo "Building custom $IMAGE from $BASE_IMAGE"
 docker build --build-arg BASE_IMAGE=$BASE_IMAGE \
              -t $IMAGE \
              --platform $BUILD_PLATFORM \
-             -f images/Dockerfile.installer ./
+             -f images/Dockerfile.installer ./ \
+	     --no-cache
 
 
 echo "Building $ISO.iso from $IMAGE"

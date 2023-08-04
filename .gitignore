@@ -11,3 +11,5 @@ overlay/installer/oem/userdata.yaml
 *.env
 provider-*/
 userdata
+*.zst
+overlay/files-iso-installer/opt/*
