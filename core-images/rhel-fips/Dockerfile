@@ -1,8 +1,29 @@
 ARG BASE_IMAGE=registry.access.redhat.com/ubi8/ubi-init:8.7-10
-
-FROM $BASE_IMAGE 
 ARG USERNAME
 ARG PASSWORD
+
+FROM $BASE_IMAGE as base
+
+# Generate os-release file
+FROM quay.io/kairos/osbuilder-tools:v0.7.11 as osbuilder
+RUN zypper install -y gettext && zypper clean
+RUN mkdir /workspace
+COPY --from=base /etc/os-release /workspace/os-release
+# You should change the following values according to your own versioning and other details
+RUN OS_NAME=kairos-core-rhel-fips \
+  OS_VERSION=8\
+  OS_ID="rhel" \
+  OS_NAME=kairos-rhel-fips \
+  BUG_REPORT_URL="https://github.com/spectrocloud/pxke-samples/issues" \
+  HOME_URL="https://github.com/spectrocloud/pxke-samples" \
+  OS_REPO="github.com/spectrocloud/pxke-samples" \
+  OS_LABEL="latest" \
+  GITHUB_REPO="spectrocloud/pxke-samples" \
+  VARIANT="fips" \
+  FLAVOR="rhel" \
+  /update-os-release.sh
+
+FROM base
 
 RUN dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
 # Subscription manager in redhat does not run directly in containers unless you run on a redhat host, hence we remove the rhsm-host, login to the redhat subscription and add the repos
@@ -55,10 +76,15 @@ RUN uuidgen > /etc/machine-id && dnf install -y \
     kernel kernel-modules kernel-modules-extra \
     rsync jq && dnf clean all
 
-COPY --from=quay.io/kairos/framework:v2.3.2_fedora / /
-RUN mkdir -p /run/lock
-RUN touch /usr/libexec/.keep
+RUN mkdir -p /run/lock && \
+  touch /usr/libexec/.keep
 
+# Copy the os-release file to identify the OS
+COPY --from=osbuilder /workspace/os-release /etc/os-release
+
+COPY --from=quay.io/kairos/framework:v2.3.2_fips-systemd / /
+
+COPY overlay/rhel8/ /
 
 # Configure the box. The ubi image masks services for containers, we unmask them 
 RUN systemctl list-unit-files |grep masked |cut -f 1 -d " " | xargs systemctl unmask
@@ -71,27 +97,26 @@ RUN systemctl enable sshd
 RUN systemctl disable selinux-autorelabel-mark.service 
 #RUN systemctl enable tmp.mount
 
-
 RUN systemctl enable cos-setup-reconcile.timer && \
     	    systemctl enable cos-setup-fs.service && \
 	    systemctl enable cos-setup-boot.service && \
 	    systemctl enable cos-setup-network.service
 
+# Copy the custom dracut config file
+COPY dracut.conf /etc/dracut.conf.d/kairos-fips.conf
 
-COPY overlay/rhel8/ /
-
+## Generate initrd
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN kernel=$(ls /boot/vmlinuz-* | head -n1) && \
             ln -sf "${kernel#/boot/}" /boot/vmlinuz
 RUN kernel=$(ls /lib/modules | head -n1) && \
             dracut -v -N -f "/boot/initrd-${kernel}" "${kernel}" && \
             ln -sf "initrd-${kernel}" /boot/initrd && depmod -a "${kernel}"
+
+# Symlink kernel HMAC
+RUN kernel=$(ls /boot/vmlinuz-* | head -n1) && ln -sf ."${kernel#/boot/}".hmac /boot/.vmlinuz.hmac
+
+# Disable SELinux
+RUN echo "SELINUX=disabled" > /etc/selinux/config
+
 RUN rm -rf /boot/initramfs-*
-
-RUN OS_NAME="${OS_NAME:-kairos-core-rhel}" OS_VERSION="${OS_VERSION:-v8.7}" envsubst >>/etc/os-release </usr/lib/os-release.tmpl
-RUN mkdir -p /etc/luet/repos.conf.d
-RUN luet repo add kairos -y --url quay.io/kairos/packages --type docker --priority 99 && luet repo update && luet install -y system/elemental-cli
-## Clear cache
-RUN rm -rf /var/cache/* && journalctl --vacuum-size=1K  && rm /etc/machine-id
-
-
-RUN subscription-manager unregister
