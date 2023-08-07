@@ -87,7 +87,7 @@ RUN kernel=$(ls /lib/modules | head -n1) && \
             ln -sf "initrd-${kernel}" /boot/initrd && depmod -a "${kernel}"
 RUN rm -rf /boot/initramfs-*
 
-RUN envsubst >>/etc/os-release </usr/lib/os-release.tmpl
+RUN OS_NAME="${OS_NAME:-kairos-core-rhel}" OS_VERSION="${OS_VERSION:-v8.7}" envsubst >>/etc/os-release </usr/lib/os-release.tmpl
 RUN mkdir -p /etc/luet/repos.conf.d
 RUN luet repo add kairos -y --url quay.io/kairos/packages --type docker --priority 99 && luet repo update && luet install -y system/elemental-cli
 ## Clear cache

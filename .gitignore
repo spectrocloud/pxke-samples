@@ -8,3 +8,8 @@
 overlay/oem/userdata.yaml
 overlay/installer/oem/userdata.yaml
 *user-data.yaml
+*.env
+provider-*/
+userdata
+*.zst
+overlay/files-iso-installer/opt/*
