@@ -55,7 +55,7 @@ RUN uuidgen > /etc/machine-id && dnf install -y \
     kernel kernel-modules kernel-modules-extra \
     rsync jq && dnf clean all
 
-COPY --from=quay.io/kairos/framework:v2.3.0_fedora / /
+COPY --from=quay.io/kairos/framework:v2.3.2_fedora / /
 RUN mkdir -p /run/lock
 RUN touch /usr/libexec/.keep
 
