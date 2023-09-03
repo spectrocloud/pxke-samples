@@ -13,8 +13,8 @@ BUILD_PLATFORM="${BUILD_PLATFORM:-linux/amd64}"
 
 echo "Cloning workspace custom $IMAGE from $BASE_IMAGE"
 git clone https://github.com/kairos-io/$PROVIDER_TYPE
-
 cd $PROVIDER_TYPE
+git checkout v1.1.8
 
 echo "Building $PROVIDER_TYPE Provider from $CORE_MAGE"
 docker run -t -v $(pwd):/workspace \

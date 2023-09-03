@@ -1,0 +1,2 @@
+FROM gcr.io/spectro-dev-public/spectro-sample/rhel8-kairos:v1.5.0
+COPY ./overlay/rhel8/system/oem/11_persistency.yaml /system/oem/11_persistency.yaml
